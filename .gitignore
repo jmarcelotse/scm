@@ -1,0 +1,40 @@
+# Kubernetes secrets and sensitive data
+*.key
+*.crt
+*.pem
+*-secret.yaml
+*secret*.yaml
+secrets/
+.secrets/
+
+# Helm temporary files
+.helmfile/
+helmfile.lock
+charts/
+*.tgz
+
+# Kubernetes config
+kubeconfig
+.kube/
+*.kubeconfig
+
+# Environment files
+.env
+.env.*
+*.env
+
+# Passwords and tokens
+*password*
+*token*
+*credentials*
+
+# Temporary files
+*.tmp
+*.temp
+.DS_Store
+.vscode/
+.idea/
+
+# Logs
+*.log
+logs/

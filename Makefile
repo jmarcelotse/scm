@@ -1,4 +1,4 @@
-.DEFAULT_GOAL := kindcreate
+.PHONY: pre helm create up destroy stop start status test passwd
 
 pre:
 
@@ -23,6 +23,42 @@ create:
 
 destroy:
 	@kind delete clusters kind
+
+stop:
+	@echo "🛑 Parando projeto CI/CD..."
+	@docker stop $$(docker ps -q --filter name=kind) 2>/dev/null || echo "ℹ️  Nenhum container Kind rodando"
+	@echo "✅ Projeto parado - dados preservados"
+
+start:
+	@echo "🚀 Reiniciando projeto CI/CD..."
+	@docker start $$(docker ps -a -q --filter name=kind) 2>/dev/null || { echo "❌ Execute 'make up' primeiro"; exit 1; }
+	@echo "⏳ Aguardando cluster..."
+	@sleep 10
+	@kubectl cluster-info --request-timeout=30s > /dev/null 2>&1 && echo "✅ Cluster pronto!" || echo "⏳ Ainda inicializando..."
+
+status:
+	@echo "📊 Status do Projeto CI/CD"
+	@echo "=========================="
+	@if [ -z "$$(docker ps -a -q --filter name=kind)" ]; then \
+		echo "❌ Projeto não existe - Execute: make up"; \
+	elif [ -z "$$(docker ps -q --filter name=kind)" ]; then \
+		echo "🛑 Projeto PARADO - Execute: make start"; \
+	else \
+		echo "✅ Projeto RODANDO"; \
+		kubectl get pods -A --no-headers 2>/dev/null | grep -v Running | grep -v Completed || echo "✅ Todos os pods rodando"; \
+	fi
+
+test:
+	@echo "🔗 Testando conectividade dos serviços..."
+	@services="jenkins.localhost.com gitea.localhost.com harbor.localhost.com sonarqube.localhost.com argocd.localhost.com"; \
+	for service in $$services; do \
+		echo -n "$$service: "; \
+		if curl -s --connect-timeout 5 --max-time 10 -o /dev/null http://$$service; then \
+			echo "✅ OK"; \
+		else \
+			echo "❌ FALHA"; \
+		fi; \
+	done
 
 passwd:
 	@echo "=== CI/CD Services Credentials ==="
